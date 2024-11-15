@@ -1,26 +1,30 @@
 name: kafka_vs_redpanda
 services:
-  kafka:
-    image: apache/kafka:latest
-    hostname: broker
-    container_name: broker
+  producer:
+    build:
+      context: .
+      dockerfile: producer/Dockerfile
+    hostname: producer
+    container_name: producer
+    depends_on:
+      - redpanda
     ports:
-      - "9093:9093" # Changed from 9092 to 9093
-    environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT_HOST://localhost:9093,PLAINTEXT://broker:19093"
-      KAFKA_PROCESS_ROLES: "broker,controller"
-      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker:29093"
-      KAFKA_LISTENERS: "CONTROLLER://:29093,PLAINTEXT_HOST://:9093,PLAINTEXT://:19093"
-      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
-      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
-      CLUSTER_ID: "4L6g3nShT-eMCtK--X86sw"
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_LOG_DIRS: "/tmp/kraft-combined-logs"
+      - "8000:8000"
+    volumes:
+      - ./producer/src/producer:/app/producer
+
+  consumer:
+    build:
+      context: .
+      dockerfile: consumer/Dockerfile
+    hostname: consumer
+    container_name: consumer
+    depends_on:
+      - redpanda
+    ports:
+      - "8100:8000"
+    volumes:
+      - ./consumer/src/consumer:/app/consumer
 
   redpanda:
     image: redpandadata/redpanda:latest
